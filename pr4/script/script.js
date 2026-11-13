@@ -1,3 +1,19 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDiVGKPGMXmpKoXG3nqhR4AdgGy0IkN6nQ",
+  authDomain: "pr4-3-4a65f.firebaseapp.com",
+  projectId: "pr4-3-4a65f",
+  storageBucket: "pr4-3-4a65f.firebasestorage.app",
+  messagingSenderId: "573989820843",
+  appId: "1:573989820843:web:532e97dc17f77070bd1aee",
+  measurementId: "G-8MDQPC5IES"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 document.addEventListener('DOMContentLoaded', () => {
     const btnOpenModal = document.getElementById('btnOpenModal');
     const modalBlock = document.getElementById('modalBlock');
@@ -7,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('next');
     const prevBtn = document.getElementById('prev');
     const sendBtn = document.getElementById('send');
+    const phoneContainer = document.getElementById('phoneContainer');
 
     let numberQuestion = 0;
     let quizDataLength = 0;
@@ -64,6 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
             formAnswers.insertAdjacentHTML('beforeend', answerCard);
         });
 
+        if (number === dbQuestions.length - 1) {
+            if (phoneContainer) phoneContainer.classList.remove('d-none');
+        } else {
+            if (phoneContainer) phoneContainer.classList.add('d-none');
+        }
+
         switch (true) {
             case (numberQuestion === 0):
                 prevBtn.style.display = 'none';
@@ -106,13 +129,36 @@ document.addEventListener('DOMContentLoaded', () => {
         finalAnswers[`${numberQuestion}_${dbQuestions[numberQuestion].question}`] = answerValues;
     };
 
-    sendBtn.addEventListener('click', () => {
+    sendBtn.addEventListener('click', async () => {
         saveAnswers();
-        console.log("Фінальні відповіді користувача:", finalAnswers);
-        formAnswers.innerHTML = '<h3 class="text-center w-100 text-success">Дякуємо! Ваші відповіді збережено.</h3>';
-        setTimeout(() => {
-            modalBlock.classList.remove('d-block');
-            numberQuestion = 0;
-        }, 2000);
+
+        const phoneInput = document.getElementById('user-phone');
+        const phoneNumber = phoneInput ? phoneInput.value.trim() : '';
+
+        if (!phoneNumber) {
+            alert("Будь ласка, введіть номер телефону!");
+            return;
+        }
+
+        try {
+            const docRef = await addDoc(collection(db, "burger_quiz_results"), {
+                answers: finalAnswers,
+                phone: phoneNumber,
+                createdAt: new Date().toISOString()
+            });
+
+            console.log("Документ успішно збережено з ID: ", docRef.id);
+            formAnswers.innerHTML = '<h3 class="text-center w-100 text-success">Дякуємо! Ваші відповіді надіслано в базу.</h3>';
+            if (phoneContainer) phoneContainer.classList.add('d-none');
+            sendBtn.classList.add('d-none');
+
+            setTimeout(() => {
+                modalBlock.classList.remove('d-block');
+                numberQuestion = 0;
+            }, 2000);
+        } catch (e) {
+            console.error("Помилка при збереженні у Firebase: ", e);
+            alert("Помилка при відправці. Спробуйте ще раз.");
+        }
     });
 });
