@@ -1,100 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <link rel="stylesheet" href="./style/style.css">
-  <title>Quiz</title>
-</head>
+const firebaseConfig = {
+  apiKey: "AIzaSyDiVGKPGMXmpKoXG3nqhR4AdgGy0IkN6nQ",
+  authDomain: "pr4-3-4a65f.firebaseapp.com",
+  projectId: "pr4-3-4a65f",
+  storageBucket: "pr4-3-4a65f.firebasestorage.app",
+  messagingSenderId: "573989820843",
+  appId: "1:573989820843:web:532e97dc17f77070bd1aee",
+  measurementId: "G-8MDQPC5IES"
+};
 
-<body>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  <header>
-    <div class="container">
-      <div class="row">
-        <div class="col">
-          <div class="d-flex justify-content-between p-1 p-sm-2 p-md-3">
-            <div class="logo d-flex">
-              <div class="logo-img"></div>
-              <span class="logo-text h1">BURGER-QUIZ</span>
-            </div>
-            <h1 class="contacts d-none d-md-block">RPZ</h1>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
+// Змінні та логіка квиза (доповніть вашими даними з db.json та функціями playTest, saveAnswers тощо)
 
-  <section class="main">
-    <div class="container">
+nextBtn.addEventListener('click', () => {
+    saveAnswers();
+    if (numberQuestion < quizDataLength - 1) {
+        numberQuestion++;
+        playTest(numberQuestion);
+    }
+});
 
-      <div class="row">
-        <div class="col">
-          <div class="d-flex justify-content-center p-1 p-sm-2 p-md-3">
-            <div class="content"></div>
-          </div>
-        </div>
-      </div>
+prevBtn.addEventListener('click', () => {
+    if (numberQuestion > 0) {
+        numberQuestion--;
+        playTest(numberQuestion);
+    }
+});
 
-      <div class="row">
-        <div class="col">
-          <div class="d-flex flex-column align-items-center p-1 p-sm-2 p-md-3">
-            <h2 class="main-title text-center h1">Пройди тестування та збери </h2>
-            <h2 class="main-title text-center h1">бургер своєї мрії</h2>
-          </div>
-        </div>
-      </div>
+sendBtn.addEventListener('click', async () => {
+    saveAnswers();
 
-      <div class="row">
-        <div class="col">
-          <div class="d-flex justify-content-center p-1 p-sm-2 p-md-3">
-            <div class="arrow display-4">&dArr;</div>
-          </div>
-        </div>
-      </div>
+    const phoneInput = document.getElementById('user-phone');
+    const phoneNumber = phoneInput ? phoneInput.value.trim() : '';
 
-      <div class="row">
-        <div class="col">
-          <div class="d-flex justify-content-center p-1 p-sm-2 p-md-3">
-            <button type="button" class="btn btn-outline-danger" id="btnOpenModal">
-              <span class="btnText h1">Пройди тестування та отримай результат</span>
-            </button>
-          </div>
-        </div>
-      </div>
+    if (!phoneNumber) {
+        alert("Будь ласка, введіть номер телефону!");
+        return;
+    }
 
-    </div>
-  </section>
+    try {
+        const docRef = await addDoc(collection(db, "burger_quiz_results"), {
+            answers: userAnswers,
+            phone: phoneNumber,
+            createdAt: new Date().toISOString()
+        });
 
-  <div class="modal" tabindex="-1" role="dialog" id="modalBlock">
-    <div class="modal-dialog  modal-dialog-centered" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Дай відповідь на питання:</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="closeModal">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body  d-flex flex-column align-items-center" id="modalBody">
-          <h5 class="question p-1 p-sm-2 p-md-3 text-center" id="question"></h5>
-          <div class="answers w-100 p-1 p-sm-2 p-md-3" id="answers">
-            <form action="#" id="formAnswers" class="formAnswers d-flex flex-wrap justify-content-around">
-            </form>
-          </div>
-        </div>
-        <div class="modal-footer" id="modalFooter">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal" id="prev">Prev</button>
-          <button type="button" class="btn btn-secondary" data-dismiss="modal" id="next">Next</button>
-          <button type="button" class="btn btn-primary sendBtn d-none" id="send">Send</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="./script/script.js"></script>
-</body>
-
-</html>
+        console.log("Документ успішно збережено з ID: ", docRef.id);
+        alert("Дякуємо! Ваші відповіді та номер телефону успішно надіслано.");
+    } catch (e) {
+        console.error("Помилка при збереженні у Firebase: ", e);
+        alert("Сталася помилка при відправці. Спробуйте ще раз.");
+    }
+});
